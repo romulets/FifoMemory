@@ -9,10 +9,10 @@
 #include <stdio.h>
 #include <time.h>
 
-#define PATH_FILE_1 "./arquivo1.txt"
-#define PATH_FILE_2 "./arquivo2.txt"
-#define PATH_FILE_3 "./arquivo3.txt"
-#define PATH_FILE_4 "./arquivo4.txt"
+#define PATH_FILE_1 "/home/romulo-farias/Documents/development/c/fifo_memory/resources/arquivo1.txt"
+#define PATH_FILE_2 "/home/romulo-farias/Documents/development/c/fifo_memory/resources/arquivo2.txt"
+#define PATH_FILE_3 "/home/romulo-farias/Documents/development/c/fifo_memory/resources/arquivo3.txt"
+#define PATH_FILE_4 "/home/romulo-farias/Documents/development/c/fifo_memory/resources/arquivo4.txt"
 
 struct node
 {
@@ -55,44 +55,51 @@ void perform_fifo(int file_number, char *file_name, int pages_number)
   list *memory = NULL;
   list *last;
   list *first;
+  list *removed_page;
   list *pages = read_file(file_name);
   int requests = 0;
   int page_value = 0;
   int page_faults = 0;
   int alocated_pages = 0;
 
+  if (pages == NULL)
+    return;
+
   while (pages != NULL)
   {
     page_value = pages->value;
+    removed_page = pages;
     pages = pages->next;
+    free(removed_page);
+
     requests++;
 
-        if (memory == NULL)
-        {
-          memory = create_page(page_value);
-          alocated_pages++;
-          continue;
-        }
+    if (memory == NULL)
+    {
+      memory = create_page(page_value);
+      alocated_pages++;
+      continue;
+    }
 
-        if (exists(page_value, memory))
-          continue;
+    if (exists(page_value, memory))
+      continue;
 
-        if (alocated_pages < pages_number)
-        {
-          last = last_page(memory);
-          last->next = create_page(page_value);
-          alocated_pages++;
-        }
-        else
-        {
-          first = memory;
-          memory = first->next;
-          free(first);
+    if (alocated_pages < pages_number)
+    {
+      last = last_page(memory);
+      last->next = create_page(page_value);
+      alocated_pages++;
+    }
+    else
+    {
+      first = memory;
+      memory = first->next;
+      free(first);
 
-          last = last_page(memory);
-          last->next = create_page(page_value);
-          page_faults++;
-        }
+      last = last_page(memory);
+      last->next = create_page(page_value);
+      page_faults++;
+    }
   }
 
   printf("Arquivo %d, %5d páginas, %7d requisições: FIFO: %7d Page Faults\n", file_number, pages_number, requests,
@@ -115,7 +122,7 @@ int exists(int value, list *memory)
 
 list* create_page(int value)
 {
-  list *page = malloc(sizeof(page));
+  list *page = malloc(sizeof(list));
   page->value = value;
   page->next = NULL;
   return page;
@@ -142,6 +149,13 @@ list* read_file(char *file_name)
   char req[10];
 
   file = fopen(file_name, "r");
+
+  if (!file)
+  {
+    printf("File %s not found\n", file_name);
+    return NULL;
+  }
+
   list *page = malloc(sizeof(list));
   list *head = page;
   list *predecessor = page;
