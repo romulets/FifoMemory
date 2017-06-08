@@ -36,15 +36,15 @@ int main(int argc, char **argv)
   t1 = clock();
 
   perform_nfu(1, PATH_FILE_1, 4, 4);
-//  perform_nfu(2, PATH_FILE_2, 4);
-//  perform_nfu(3, PATH_FILE_3, 64);
-//  perform_nfu(3, PATH_FILE_3, 256);
-//  perform_nfu(3, PATH_FILE_3, 1024);
-//  perform_nfu(3, PATH_FILE_3, 2048);
-//  perform_nfu(4, PATH_FILE_4, 64);
-//  perform_nfu(4, PATH_FILE_4, 256);
-//  perform_nfu(4, PATH_FILE_4, 1024);
-//  perform_nfu(4, PATH_FILE_4, 2048);
+  perform_nfu(2, PATH_FILE_2, 4, 4);
+  perform_nfu(3, PATH_FILE_3, 64, 8);
+  perform_nfu(3, PATH_FILE_3, 256, 8);
+  perform_nfu(3, PATH_FILE_3, 1024, 8);
+  perform_nfu(3, PATH_FILE_3, 2048, 8);
+  perform_nfu(4, PATH_FILE_4, 64, 8);
+  perform_nfu(4, PATH_FILE_4, 256, 8);
+  perform_nfu(4, PATH_FILE_4, 1024, 8);
+  perform_nfu(4, PATH_FILE_4, 2048, 8);
 
   t2 = clock();
 
@@ -71,8 +71,30 @@ void perform_nfu(int file_number, char *file_name, int pages_number, int bits_nu
 
   while (pages != NULL)
   {
-    printf("\n");
-    age_list(head);
+    //printf("\n");
+    if (pages_number == 64)
+    {
+      if (requests % 20 == 0)
+        age_list(head);
+    }
+    else if (pages_number == 256)
+    {
+      if (requests % 100 == 0)
+        age_list(head);
+    }
+    else if (pages_number == 1024)
+    {
+      if (requests % 400 == 0)
+        age_list(head);
+    }
+    else if (pages_number == 2048)
+    {
+      if (requests % 800 == 0)
+        age_list(head);
+    } else {
+      age_list(head);
+    }
+
     page_value = pages->value;
     removed_page = pages;
     pages = pages->next;
@@ -88,17 +110,15 @@ void perform_nfu(int file_number, char *file_name, int pages_number, int bits_nu
       continue;
     }
 
-    memory = exists(page_value, memory);
+    memory = exists(page_value, head);
 
     if (memory != NULL)
     {
       unsigned old = memory->age;
       memory->age = memory->age | initial_age;
-      printf ("\n\n [ NEW ] page %d  is going from %d to %d! \n", memory->value, old, memory->age);
-      continue;
+      //printf ("\n\n [ NEW ] page %d  is going from %d to %d! \n", memory->value, old, memory->age);
     }
-
-    if (alocated_pages < pages_number)
+    else if (alocated_pages < pages_number)
     {
       tail->next = create_page(page_value, initial_age);
       tail = tail->next;
@@ -106,12 +126,12 @@ void perform_nfu(int file_number, char *file_name, int pages_number, int bits_nu
     }
     else
     {
-      page_faults++;
       memory = older_page(head);
-      printf ("\n\n [ OLD (%d) ] %d wants to go in and %d is the oldest page (age = %d)\n", page_faults, page_value, memory->value, memory->age);
-      printf ("--------------------------------------------------------------------------------------\n");
+      //printf ("\n\n [ OLD (%d) ] %d wants to go in and %d is the oldest page (age = %d)\n", page_faults, page_value, memory->value, memory->age);
+//      //printf ("--------------------------------------------------------------------------------------\n");
       memory->age = initial_age;
       memory->value = page_value;
+      page_faults++;
     }
   }
 
@@ -138,10 +158,9 @@ void age_list(list *head)
 
   while (copy != NULL)
   {
-    printf(" (Value:%d; Age:%d) ", copy->value, copy->age);
+    //printf(" %d(%d) ", copy->value, copy->age);
 
-    if (copy->age > 1)
-      copy->age = copy->age >> 1;
+    copy->age = copy->age >> 1;
     copy = copy->next;
   }
 }
@@ -175,7 +194,6 @@ list* exists(int value, list *head)
 
     node = node->next;
   }
-
   return NULL;
 }
 
@@ -198,7 +216,7 @@ list* read_file(char *file_name)
 
   if (!file)
   {
-    printf("File %s not found\n", file_name);
+    //printf("File %s not found\n", file_name);
     return NULL;
   }
 
